@@ -29,7 +29,7 @@ import Filter from './components/Filter';
       
       
       <NavigationContainer>
-        <stack.Navigator initialRouteName='splash' >
+        <stack.Navigator initialRouteName='splash'>
           <stack.Screen name='splash' component={Splashscreen} options={{headerShown:false}}></stack.Screen>
           <stack.Screen name='home' component={BottomTabs} options={{headerShown:false}}></stack.Screen>
           <stack.Screen name='Login' component={Login}  ></stack.Screen>
