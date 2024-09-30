@@ -102,6 +102,8 @@ const Location = () => {
     },
   ]);
 
+  const [mapType, setMapType] = useState('standard'); 
+  
   const handleMarkerPress = (marker: any) => {
     setSelectedMarker(marker);
     setModalVisible(true);
@@ -145,6 +147,10 @@ const Location = () => {
       setFilteredMarkers([]);
     }
     setIsDrawing(!isDrawing);
+  };
+
+  const toggleMapType = () => {
+    setMapType((prevType) => (prevType === 'standard' ? 'satellite' : 'standard'));
   };
 
   const handleMapPress = (event: any) => {
@@ -193,9 +199,7 @@ const Location = () => {
 
   return (
     <View className='flex-1'>
-      <View>
-        <Search/>
-      </View>
+      
     <View style={styles.container}>
        
        <TextInput
@@ -204,6 +208,16 @@ const Location = () => {
         value={searchText}
         onChangeText={handleSearch}
       />
+       <TouchableOpacity
+          style={styles.satelliteButton}
+          onPress={toggleMapType}
+        >
+          <Ionicons
+            name={mapType === 'satellite' ? 'earth' : 'map'}
+            size={40}
+            color="blue"
+          />
+        </TouchableOpacity>
         
       
      
@@ -223,6 +237,7 @@ const Location = () => {
         region={region}
         onPress={handleMapPress}
         showsUserLocation={true}
+        mapType={mapType}
       >
         {circle && <Circle center={circle.center} radius={circle.radius} />}
         {(isDrawing ? filteredMarkers : markers).map((marker, index) => (
@@ -299,6 +314,15 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     padding: 15,
      
+  },
+  satelliteButton: {
+    position: 'absolute',
+    top: 520,
+    right: 18,
+    zIndex: 1,
+    backgroundColor: '#fefce8',
+    borderRadius: 50,
+    padding: 15,
   },
   modalContainer: {
     flex: 1,
