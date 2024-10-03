@@ -26,11 +26,7 @@ const Feed = () => {
       </View>
       <ScrollView horizontal  showsHorizontalScrollIndicator={false}>
        <Locationcard/>
-       <Locationcard/>
-       <Locationcard/>
-       <Locationcard/>
-       <Locationcard/>
-       <Locationcard/>
+      
       </ScrollView>
 
       <View >

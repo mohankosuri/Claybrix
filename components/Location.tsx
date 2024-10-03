@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Dimensions, TouchableOpacity, PermissionsAndroid, Platform, Modal, Text, Image, TextInput, Button } from 'react-native';
-import MapView, { PROVIDER_GOOGLE, Marker, Circle, Polyline } from 'react-native-maps';
+import MapView, { PROVIDER_GOOGLE, Marker, Circle, Polyline,Polygon } from 'react-native-maps';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import CustomMarker from './CustomerMarker';
 import Search from './Search';
@@ -177,7 +177,7 @@ const Location = () => {
 
     // Set the circle center and radius
     if (!circle) {
-      setCircle({ center: { latitude, longitude }, radius: 1000 }); // Example radius in meters
+      setCircle({ center: { latitude, longitude }, radius: 2000 }); // Example radius in meters
     }
 
     setPolylines((prev) => {
@@ -245,7 +245,7 @@ const Location = () => {
           spiderLineColor={"#140c98"}
           showsBuildings={true}
           showsMyLocationButton={true}
-          loadingEnabled={true}
+          
           clusterColor={"#140c98"}
           onPanDrag={handleMapPress}
           
@@ -277,10 +277,11 @@ const Location = () => {
             />
           )}
           {isDrawing && polylines.length > 1 && (
-            <Polyline 
+            <Polygon 
               coordinates={polylines} 
               strokeColor="red" 
               strokeWidth={3} 
+              fillColor='pink'
             />
           )}
         </MapView>
