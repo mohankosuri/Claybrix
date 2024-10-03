@@ -34,7 +34,7 @@ import Filter from './components/Filter';
           <stack.Screen name='home' component={BottomTabs} options={{headerShown:false}}></stack.Screen>
           <stack.Screen name='Login' component={Login}  ></stack.Screen>
           <stack.Screen name='otpscreen' component={OtpScreen} ></stack.Screen>
-          <stack.Screen name='detailedlocation' component={Detaildlocation} ></stack.Screen>
+          <stack.Screen name='detailedlocation' component={Detaildlocation} options={{headerShown:false}}></stack.Screen>
           <stack.Screen name='getprequalified' component={GetPreQualified} ></stack.Screen>
           <stack.Screen name='helpcenter' component={HelpCenter} ></stack.Screen>
           <stack.Screen name='hiddenhomes' component={HiddenHomes} ></stack.Screen>

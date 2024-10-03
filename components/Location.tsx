@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Dimensions, TouchableOpacity, PermissionsAndroid, Platform, Modal, Text, Image, TextInput, Button } from 'react-native';
-import MapView, { PROVIDER_GOOGLE, Marker, Circle } from 'react-native-maps';
-import Ionicons from 'react-native-vector-icons/Ionicons'; // Import icon library
+import MapView, { PROVIDER_GOOGLE, Marker, Circle, Polyline,Polygon } from 'react-native-maps';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import CustomMarker from './CustomerMarker';
 import Search from './Search';
-
 
 interface MarkerType {
   latlng: { latitude: number; longitude: number };
   title: string;
   description: string;
   image: string;
-  price:string
+  price: string;
 }
 
 const Location = () => {
@@ -21,14 +20,16 @@ const Location = () => {
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
+  
   const [isDrawing, setIsDrawing] = useState(false);
   const [circle, setCircle] = useState<{ center: any; radius: number } | null>(null);
+  const [polylines, setPolylines] = useState<{ latitude: number; longitude: number }[]>([]);
   
   const [filteredMarkers, setFilteredMarkers] = useState<MarkerType[]>([]);
   const [selectedMarker, setSelectedMarker] = useState<MarkerType | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
-
+  
   const [markers, setMarkers] = useState<MarkerType[]>([
     {
       latlng: { latitude: 28.613939, longitude: 77.209021 },
@@ -101,9 +102,9 @@ const Location = () => {
        price:"$950k"
     },
   ]);
-
-  const [mapType, setMapType] = useState('standard'); 
   
+  const [mapType, setMapType] = useState('standard'); 
+
   const handleMarkerPress = (marker: any) => {
     setSelectedMarker(marker);
     setModalVisible(true);
@@ -140,6 +141,7 @@ const Location = () => {
   const toggleDrawingMode = () => {
     if (isDrawing) {
       // Reset circle and show all markers when exiting drawing mode
+      setPolylines([]);
       setCircle(null);
       setFilteredMarkers(markers);
     } else {
@@ -150,38 +152,7 @@ const Location = () => {
   };
 
   const toggleMapType = () => {
-    setMapType((prevType) => (prevType === 'standard' ? 'satellite' : 'standard'));
-  };
-
-  const handleMapPress = (event: any) => {
-    if (!isDrawing) return;
-
-    const { latitude, longitude } = event.nativeEvent.coordinate;
-    if (!circle) {
-      // Set the center of the circle
-      setCircle({ center: { latitude, longitude }, radius: 0 });
-    } else {
-      // Set the radius of the circle
-      const radius = calculateDistance(circle.center, { latitude, longitude });
-      setCircle({ ...circle, radius });
-
-      // Filter markers within the circle
-      const filtered = markers.filter(marker =>
-        calculateDistance(circle.center, marker.latlng) <= radius
-      );
-      setFilteredMarkers(filtered);
-    }
-  };
-
-  const calculateDistance = (point1: any, point2: any) => {
-    const R = 6371; // Radius of the Earth in km
-    const dLat = (point2.latitude - point1.latitude) * Math.PI / 180;
-    const dLon = (point2.longitude - point1.longitude) * Math.PI / 180;
-    const a =
-      0.5 - Math.cos(dLat) / 2 +
-      Math.cos(point1.latitude * Math.PI / 180) * Math.cos(point2.latitude * Math.PI / 180) *
-      (1 - Math.cos(dLon)) / 2;
-    return R * 2 * Math.asin(Math.sqrt(a)) * 1000; // Distance in meters
+    setMapType((prevType) => (prevType === 'standard' ? 'hybrid' : 'standard'));
   };
 
   const handleCloseModal = () => {
@@ -197,90 +168,145 @@ const Location = () => {
     setFilteredMarkers(filtered);
   };
 
+  
+
+  const handleMapPress = (event: any) => {
+    if (!isDrawing) return;
+
+    const { latitude, longitude } = event.nativeEvent.coordinate;
+
+    // Set the circle center and radius
+    if (!circle) {
+      setCircle({ center: { latitude, longitude }, radius: 2000 }); // Example radius in meters
+    }
+
+    setPolylines((prev) => {
+      const newPolylines = [...prev, { latitude, longitude }];
+      return newPolylines;
+    });
+  };
+
+  const isMarkerWithinCircle = (marker: MarkerType) => {
+    if (!circle) return true; // If no circle, show all markers
+
+    const distance = getDistance(
+      circle.center.latitude,
+      circle.center.longitude,
+      marker.latlng.latitude,
+      marker.latlng.longitude
+    );
+
+    return distance <= circle.radius; // Check if the marker is within the circle radius
+  };
+
+  const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371e3; // meters
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // in meters
+  };
+
+  useEffect(() => {
+    if (circle) {
+      const filtered = markers.filter(isMarkerWithinCircle);
+      setFilteredMarkers(filtered);
+    }
+  }, [circle, markers]);
+
+  
+
   return (
     <View className='flex-1'>
-      
-    <View style={styles.container}>
-       
-       <TextInput
-        style={styles.searchBox}
-        placeholder="Search..."
-        value={searchText}
-        onChangeText={handleSearch}
-      />
-       <TouchableOpacity
-          style={styles.satelliteButton}
-          onPress={toggleMapType}
-        >
-          <Ionicons
-            name={mapType === 'satellite' ? 'earth' : 'map'}
-            size={40}
-            color="blue"
-          />
-        </TouchableOpacity>
-        
-      
-     
-      <TouchableOpacity
-        style={styles.drawButton}
-        onPress={toggleDrawingMode}
-      >
-        <Ionicons
-          name={isDrawing ? "close" : "hand-left"}
-          size={40}
-          color={isDrawing ? "red" : "green"}
+      <View style={styles.container}>
+        <TextInput
+          style={styles.searchBox}
+          placeholder="Search..."
+          value={searchText}
+          onChangeText={handleSearch}
         />
-      </TouchableOpacity>
-      <MapView
-        provider={PROVIDER_GOOGLE}
-        style={styles.map}
-        region={region}
-        onPress={handleMapPress}
-        showsUserLocation={true}
-        mapType={mapType}
-      >
-        {circle && <Circle center={circle.center} radius={circle.radius} />}
-        {(isDrawing ? filteredMarkers : markers).map((marker, index) => (
-          <Marker
-            key={index}
-            coordinate={marker.latlng}
-            title={marker.title}
-            description={marker.description}
-            onPress={() => handleMarkerPress(marker)}
+        <TouchableOpacity style={styles.satelliteButton} onPress={toggleMapType}>
+          <Ionicons name={mapType === 'hybrid' ? 'earth' : 'earth'} size={40} color={mapType === 'hybrid' ? "#2dd8d8" : "#b2babb"} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.drawButton} onPress={toggleDrawingMode}>
+          <Ionicons name={isDrawing ? "hand-left" : "hand-left"} size={40} color={isDrawing ? "#2dd8d8" : "#b2babb"} />
+        </TouchableOpacity>
+        <MapView
+          provider={PROVIDER_GOOGLE}
+          style={styles.map}
+          region={region}
+          spiderLineColor={"#140c98"}
+          showsBuildings={true}
+          showsMyLocationButton={true}
+          
+          clusterColor={"#140c98"}
+          onPanDrag={handleMapPress}
+          
+          showsUserLocation={true}
+          scrollEnabled={!isDrawing} 
+          zoomEnabled={!isDrawing} 
+          rotateEnabled={!isDrawing}
+          showsTraffic={true}
            
-            
-          ><CustomMarker price={marker.price}/></Marker>
-        ))}
-      </MapView>
-      <Modal
-        visible={modalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={handleCloseModal}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            {selectedMarker && (
-              <>
-                <Image
-                  source={{ uri: selectedMarker.image }}
-                  style={styles.locationImage}
-                />
-                <Text>{selectedMarker.title}</Text>
-                <Text>{selectedMarker.description}</Text>
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={handleCloseModal}
-                >
-                  <Text style={styles.closeButtonText}>Close</Text>
-                </TouchableOpacity>
-              </>
-            )}
+          mapType={mapType}
+        >
+          {(isDrawing ? filteredMarkers : markers).map((marker, index) => (
+            <Marker
+              key={index}
+              coordinate={marker.latlng}
+              title={marker.title}
+              description={marker.description}
+              onPress={() => handleMarkerPress(marker)}
+            >
+              <CustomMarker price={marker.price} />
+            </Marker>
+          ))}
+          {isDrawing && circle && (
+            <Circle
+              center={circle.center}
+              radius={circle.radius}
+              strokeColor="rgba(255, 0, 0, 0.5)"
+              fillColor="rgba(255, 0, 0, 0.2)"
+            />
+          )}
+          {isDrawing && polylines.length > 1 && (
+            <Polygon 
+              coordinates={polylines} 
+              strokeColor="red" 
+              strokeWidth={3} 
+              fillColor='pink'
+            />
+          )}
+        </MapView>
+        <Modal
+          visible={modalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={handleCloseModal}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              {selectedMarker && (
+                <>
+                  <Image source={{ uri: selectedMarker.image }} style={styles.locationImage} />
+                  <Text>{selectedMarker.title}</Text>
+                  <Text>{selectedMarker.description}</Text>
+                  <TouchableOpacity style={styles.closeButton} onPress={handleCloseModal}>
+                    <Text style={styles.closeButtonText}>Close</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
           </View>
-        </View>
-      </Modal>
-
-    </View>
+        </Modal>
+      </View>
     </View>
   );
 };
@@ -310,19 +336,19 @@ const styles = StyleSheet.create({
     top: 600,
     right: 20,
     zIndex: 1,
-    backgroundColor: '#fefce8',
+    backgroundColor: '#f4f6f6',
     borderRadius: 50,
-    padding: 15,
+    padding: 10,
      
   },
   satelliteButton: {
     position: 'absolute',
-    top: 520,
+    top: 530,
     right: 18,
     zIndex: 1,
-    backgroundColor: '#fefce8',
+    backgroundColor: '#f4f6f6',
     borderRadius: 50,
-    padding: 15,
+    padding: 10,
   },
   modalContainer: {
     flex: 1,
@@ -355,5 +381,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
 
 export default Location;
