@@ -15,7 +15,7 @@ const Splashscreen = () => {
         duration: 1000 ,
         useNativeDriver: true,
       }),
-      Animated.delay(1000),  
+      Animated.delay(3000),  
       Animated.timing(fadeAnim, {
         toValue: 0, 
         duration: 1000, 

@@ -22,9 +22,8 @@ const Location = () => {
   });
   
   const [isDrawing, setIsDrawing] = useState(false);
-  const [circle, setCircle] = useState<{ center: any; radius: number } | null>(null);
-  const [polylines, setPolylines] = useState<{ latitude: number; longitude: number }[]>([]);
-  
+ 
+  const [polygonCoordinates, setPolygonCoordinates] = useState<{ latitude: number; longitude: number }[]>([]);
   const [filteredMarkers, setFilteredMarkers] = useState<MarkerType[]>([]);
   const [selectedMarker, setSelectedMarker] = useState<MarkerType | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -140,9 +139,8 @@ const Location = () => {
 
   const toggleDrawingMode = () => {
     if (isDrawing) {
-      // Reset circle and show all markers when exiting drawing mode
-      setPolylines([]);
-      setCircle(null);
+      // Reset polygon and show all markers when exiting drawing mode
+      setPolygonCoordinates([]);
       setFilteredMarkers(markers);
     } else {
       // Enable drawing mode and hide all markers
@@ -174,52 +172,33 @@ const Location = () => {
     if (!isDrawing) return;
 
     const { latitude, longitude } = event.nativeEvent.coordinate;
+    setPolygonCoordinates((prev) => [...prev, { latitude, longitude }]);
+  };
 
-    // Set the circle center and radius
-    if (!circle) {
-      setCircle({ center: { latitude, longitude }, radius: 2000 }); // Example radius in meters
+  const isMarkerInsidePolygon = (marker: MarkerType) => {
+    if (polygonCoordinates.length < 3) return false;
+
+    let inside = false;
+    let x = marker.latlng.latitude, y = marker.latlng.longitude;
+
+    for (let i = 0, j = polygonCoordinates.length - 1; i < polygonCoordinates.length; j = i++) {
+      let xi = polygonCoordinates[i].latitude, yi = polygonCoordinates[i].longitude;
+      let xj = polygonCoordinates[j].latitude, yj = polygonCoordinates[j].longitude;
+
+      let intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
     }
-
-    setPolylines((prev) => {
-      const newPolylines = [...prev, { latitude, longitude }];
-      return newPolylines;
-    });
+    return inside;
   };
 
-  const isMarkerWithinCircle = (marker: MarkerType) => {
-    if (!circle) return true; // If no circle, show all markers
-
-    const distance = getDistance(
-      circle.center.latitude,
-      circle.center.longitude,
-      marker.latlng.latitude,
-      marker.latlng.longitude
-    );
-
-    return distance <= circle.radius; // Check if the marker is within the circle radius
-  };
-
-  const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371e3; // meters
-    const φ1 = (lat1 * Math.PI) / 180;
-    const φ2 = (lat2 * Math.PI) / 180;
-    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
-
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return R * c; // in meters
-  };
+   
 
   useEffect(() => {
-    if (circle) {
-      const filtered = markers.filter(isMarkerWithinCircle);
+    if (isDrawing && polygonCoordinates.length > 2) {
+      const filtered = markers.filter(isMarkerInsidePolygon);
       setFilteredMarkers(filtered);
     }
-  }, [circle, markers]);
+  }, [polygonCoordinates, markers]);
 
   
 
@@ -239,52 +218,41 @@ const Location = () => {
           <Ionicons name={isDrawing ? "hand-left" : "hand-left"} size={40} color={isDrawing ? "#2dd8d8" : "#b2babb"} />
         </TouchableOpacity>
         <MapView
-          provider={PROVIDER_GOOGLE}
-          style={styles.map}
-          region={region}
-          spiderLineColor={"#140c98"}
-          showsBuildings={true}
-          showsMyLocationButton={true}
-          
-          clusterColor={"#140c98"}
-          onPanDrag={handleMapPress}
-          
-          showsUserLocation={true}
-          scrollEnabled={!isDrawing} 
-          zoomEnabled={!isDrawing} 
-          rotateEnabled={!isDrawing}
-          showsTraffic={true}
-           
-          mapType={mapType}
-        >
-          {(isDrawing ? filteredMarkers : markers).map((marker, index) => (
-            <Marker
-              key={index}
-              coordinate={marker.latlng}
-              title={marker.title}
-              description={marker.description}
-              onPress={() => handleMarkerPress(marker)}
-            >
-              <CustomMarker price={marker.price} />
-            </Marker>
-          ))}
-          {isDrawing && circle && (
-            <Circle
-              center={circle.center}
-              radius={circle.radius}
-              strokeColor="rgba(255, 0, 0, 0.5)"
-              fillColor="rgba(255, 0, 0, 0.2)"
-            />
-          )}
-          {isDrawing && polylines.length > 1 && (
-            <Polygon 
-              coordinates={polylines} 
-              strokeColor="red" 
-              strokeWidth={3} 
-              fillColor='pink'
-            />
-          )}
-        </MapView>
+        provider={PROVIDER_GOOGLE}
+        style={styles.map}
+        region={region}
+        mapType={mapType}
+        onPanDrag={handleMapPress}
+        scrollEnabled={!isDrawing}
+        zoomEnabled={true}
+        spiderLineColor={"#140c98"}
+        showsBuildings={true}
+        showsMyLocationButton={true}
+        clusterColor={"#140c98"}
+        
+        
+        showsUserLocation={true}
+      >
+        {isDrawing && polygonCoordinates.length > 2 && (
+          <Polygon
+            coordinates={polygonCoordinates}
+            strokeColor="#000"
+            fillColor="rgba(0,200,0,0.5)"
+            strokeWidth={2}
+          />
+        )}
+        {(isDrawing ? filteredMarkers : markers).map((marker, index) => (
+          <Marker
+            key={index}
+            coordinate={marker.latlng}
+            
+            description={marker.description}
+            onPress={() => handleMarkerPress(marker)}
+          >
+            <CustomMarker price={marker.price} />
+          </Marker>
+        ))}
+      </MapView>
         <Modal
           visible={modalVisible}
           transparent={true}
