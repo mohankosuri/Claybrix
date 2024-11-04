@@ -13,6 +13,7 @@ import HiddenHomes from './components/HiddenHomes';
 import MortgageRates from './components/MortgageRates';
 import Profile from './screens/Profile';
 import Filter from './components/Filter';
+import NavigationDetailedview from './components/NavigationDetailedview';
 
  
 
@@ -41,6 +42,7 @@ import Filter from './components/Filter';
           <stack.Screen name='mortgagerates' component={MortgageRates} ></stack.Screen>
           <stack.Screen name='profile' component={Profile} ></stack.Screen>
           <stack.Screen name='filter' component={Filter} ></stack.Screen>
+          <stack.Screen name='NavigationDetailedview' component={NavigationDetailedview} ></stack.Screen>
         </stack.Navigator>
       </NavigationContainer>
         

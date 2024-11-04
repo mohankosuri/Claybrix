@@ -1,4 +1,4 @@
-import { View, Text ,ScrollView } from 'react-native'
+import { View, Text ,ScrollView,StatusBar } from 'react-native'
 import React from 'react'
 import Locationcard from '../components/Locationcard'
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
@@ -12,7 +12,7 @@ const Feed = () => {
 
   return (
     <View className='flex bg-neutral-50'>
-        
+        <StatusBar barStyle="light-content" backgroundColor="#6a51ae"></StatusBar>
         <View className='p-4 shadow-lg shadow-gray-900 bg-white flex flex-row justify-between items-center'>
         <Text className='text-3xl font-bold tracking-widest'>
               <Text style={{ color: '#1990b0' }}>Clay</Text>
@@ -30,7 +30,7 @@ const Feed = () => {
       </ScrollView>
 
       <View >
-      <View className='mt-4'>
+      <View>
         <Text className='text-lg font-bold'>Homes in Norman</Text>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>

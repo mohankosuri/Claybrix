@@ -214,37 +214,47 @@ const Locationcard = () => {
   const navigation:any= useNavigation()
   
   return (
-    <View className='flex-1 flex-row'>
-      {location.map((item)=>(
-        <View key={item.id}>
-        <TouchableOpacity className='rounded-md p-2' onPress={()=>navigation.navigate('detailedlocation',{item})} >
-        <Image src={item.image} className='w-[300px] h-[230px] rounded-md'/>
-         
-       <View className='my-2'><Text className='text-gray-800 font-bold text-lg'>${item.Amount}</Text></View>
-       <View className='flex flex-row justify-between'>
-         <View className='flex flex-row space-x-2 items-center'>
-         <FontAwesome name="bed" size={20} color="gray" />
-         <Text>{item.beds}</Text>
-         </View>
-         <View className='flex flex-row space-x-2 items-center'>
-         <FontAwesome name="bathtub" size={20} color="gray" />
-         <Text>{item.bath}</Text>
-         </View>
-         <View className='flex flex-row space-x-2 items-center'>
-         <MaterialCommunityIcons name="set-square" size={20} color="gray" />
-         <Text>{item.area}</Text>
-         </View>
-       </View>
-       <View className='flex-col gap-1 mt-2'>
-       <Text>5823 Windstone Dr</Text>
-       <Text>Norman, Ok</Text>
-       <Text className='text-xs'>AGENT LISTING</Text>
-       <Text className='text-xs'>Listed Thu at 7:00 pm</Text>
-       </View>
-     </TouchableOpacity>
-     </View> ))}
-      
-    </View>
+    <View className="flex-1 flex-row flex-wrap justify-around">
+    {location.map((item) => (
+      <View key={item.id} className="mb-6">
+        <TouchableOpacity
+          className="bg-white rounded-xl shadow-lg p-4 mx-1"
+          onPress={() => navigation.navigate('detailedlocation', { item })}
+        >
+          <Image
+            source={{ uri: item.image }}
+            className="w-[300px] h-[230px] rounded-xl"
+          />
+
+          <View className="mt-4">
+            <Text className="text-indigo-600 font-bold text-xl">${item.Amount}</Text>
+          </View>
+
+          <View className="flex flex-row justify-between mt-2">
+            <View className="flex flex-row space-x-2 items-center">
+              <FontAwesome name="bed" size={20} color="darkslateblue" />
+              <Text className="text-gray-600 font-medium">{item.beds}</Text>
+            </View>
+            <View className="flex flex-row space-x-2 items-center">
+              <FontAwesome name="bathtub" size={20} color="darkslateblue" />
+              <Text className="text-gray-600 font-medium">{item.bath}</Text>
+            </View>
+            <View className="flex flex-row space-x-2 items-center">
+              <MaterialCommunityIcons name="set-square" size={20} color="darkslateblue" />
+              <Text className="text-gray-600 font-medium">{item.area}</Text>
+            </View>
+          </View>
+
+          <View className="flex-col gap-1 mt-4">
+            <Text className="text-gray-800 font-semibold">5823 Windstone Dr</Text>
+            <Text className="text-gray-500">Norman, Ok</Text>
+            <Text className="text-xs text-gray-500">AGENT LISTING</Text>
+            <Text className="text-xs text-gray-400">Listed Thu at 7:00 pm</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+    ))}
+  </View>
   )
 }
 

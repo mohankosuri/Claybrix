@@ -1,47 +1,96 @@
-import { View, Text, SafeAreaView, Animated,ImageBackground, StatusBar } from 'react-native';
+import { View, Text, ImageBackground, StatusBar, Animated } from 'react-native';
 import React, { useEffect, useRef } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import LottieView from 'lottie-react-native';
 
 const Splashscreen = () => {
   const navigator: any = useNavigation();
-  const fadeAnim = useRef(new Animated.Value(0)).current; // Initial opacity: 0 (hidden)
+
+  // Create an array of Animated values for each letter
+  const animatedValues = useRef(
+    Array.from({ length: 8 }).map(() => new Animated.Value(0))
+  ).current; // 8 letters for "ClayBrix"
+
+  const overallScale = useRef(new Animated.Value(1)).current; // Overall scale for entire text
 
   useEffect(() => {
-    
-    Animated.sequence([
-      Animated.timing(fadeAnim, {
-        toValue: 1, 
-        duration: 1000 ,
+    // Define animations for each letter with staggered delays
+    const animations = animatedValues.map((value, index) => {
+      return Animated.spring(value, {
+        toValue: 1,
+        friction: 5,
+        tension: 100,
         useNativeDriver: true,
-      }),
-      Animated.delay(3000),  
-      Animated.timing(fadeAnim, {
-        toValue: 0, 
-        duration: 1000, 
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      navigator.navigate('home');
+        delay: index * 150, // delay each letter by 150ms more than the previous one
+      });
     });
-  }, [fadeAnim]);
+
+    // Start all letter animations sequentially, then scale the entire text slightly
+    Animated.stagger(150, animations).start(() => {
+      // After all letters are animated, add a final bounce to the whole word
+      Animated.sequence([
+        Animated.timing(overallScale, {
+          toValue: 1.2,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(overallScale, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        // Navigate to home screen after all animations are complete
+        navigator.reset({
+          index: 0,
+          routes: [{ name: 'home' }],
+        });
+      });
+    });
+  }, [animatedValues]);
+
+  // Function to render each animated letter with a scale-in and bounce effect
+  const renderAnimatedText = (text:any, animatedValues:any) => {
+    return text.split('').map((letter:any, index:any) => (
+      <Animated.Text
+        key={index}
+        style={{
+          opacity: animatedValues[index], // use the animated value for opacity
+          transform: [
+            {
+              scale: animatedValues[index].interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.3, 1], // Scale from 0.3 to 1 for a bounce effect
+              }),
+            },
+          ],
+          fontSize: 50,
+          fontWeight: 'bold',
+          color: index < 4 ? '#1990b0' : '#e7852f', // Different color for "Clay" and "Brix"
+        }}
+      >
+        {letter}
+      </Animated.Text>
+    ));
+  };
 
   return (
-    <View className='h-full w-full'>
-      <StatusBar barStyle="light-content" backgroundColor="#6a51ae"></StatusBar>
-      <ImageBackground className='flex-1 bg-cover' source={require('../assets/bg1.jpg')}>
-        <View className='flex justify-center items-center mt-[350px]'>
-          <Animated.View style={[{ opacity: fadeAnim }]}>
-            <Text className='text-5xl font-bold tracking-widest'>
-              <Text style={{ color: '#1990b0' }}>Clay</Text>
-              <Text style={{ color: '#e7852f' }}>Brix</Text>
-            </Text>
-          </Animated.View>
-        </View>
-       
+    <View style={{ flex: 1 }}>
+      {/* Hide the status bar */}
+      <StatusBar hidden={true} />
+      <ImageBackground
+        source={require('../assets/house.jpg')}
+        style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+        resizeMode="cover"
+      >
+        <Animated.View style={{ transform: [{ scale: overallScale }] }}>
+          <View style={{ flexDirection: 'row' }}>
+            {/* Render "ClayBrix" with animations for each letter */}
+            {renderAnimatedText('ClayBrix', animatedValues)}
+          </View>
+        </Animated.View>
       </ImageBackground>
     </View>
   );
-}
+};
 
 export default Splashscreen;

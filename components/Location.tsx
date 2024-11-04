@@ -4,6 +4,10 @@ import MapView, { PROVIDER_GOOGLE, Marker, Circle, Polyline,Polygon } from 'reac
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import CustomMarker from './CustomerMarker';
 import Search from './Search';
+import { useNavigation } from '@react-navigation/native';
+import Geolocation from "@react-native-community/geolocation";
+
+
 
 interface MarkerType {
   latlng: { latitude: number; longitude: number };
@@ -21,6 +25,7 @@ const Location = () => {
     longitudeDelta: 0.0421,
   });
   
+  const navigation:any = useNavigation()
   const [isDrawing, setIsDrawing] = useState(false);
  
   const [polygonCoordinates, setPolygonCoordinates] = useState<{ latitude: number; longitude: number }[]>([]);
@@ -124,6 +129,7 @@ const Location = () => {
         );
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
           console.log("You can use the location");
+          getCurrentLocation();
         } else {
           console.log("Location permission denied");
         }
@@ -173,7 +179,26 @@ const Location = () => {
 
     const { latitude, longitude } = event.nativeEvent.coordinate;
     setPolygonCoordinates((prev) => [...prev, { latitude, longitude }]);
+    
   };
+
+  const getCurrentLocation = () => {
+    Geolocation.getCurrentPosition(
+      position => {
+        const { latitude, longitude } = position.coords;
+        setRegion({
+          latitude,
+          longitude,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        });
+      },
+      error => console.log(error),
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
+    );
+  };
+
+  
 
   const isMarkerInsidePolygon = (marker: MarkerType) => {
     if (polygonCoordinates.length < 3) return false;
@@ -229,9 +254,9 @@ const Location = () => {
         showsBuildings={true}
         showsMyLocationButton={true}
         clusterColor={"#140c98"}
-        
-        
         showsUserLocation={true}
+        
+        
       >
         {isDrawing && polygonCoordinates.length > 2 && (
           <Polygon
@@ -260,7 +285,7 @@ const Location = () => {
           onRequestClose={handleCloseModal}
         >
           <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
+            <TouchableOpacity style={styles.modalContent}>
               {selectedMarker && (
                 <>
                   <Image source={{ uri: selectedMarker.image }} style={styles.locationImage} />
@@ -271,7 +296,7 @@ const Location = () => {
                   </TouchableOpacity>
                 </>
               )}
-            </View>
+            </TouchableOpacity>
           </View>
         </Modal>
       </View>
